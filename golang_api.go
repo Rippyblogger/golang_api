@@ -17,6 +17,7 @@ func main() {
 	http.HandleFunc("/ec2s", getEc2sHandler)
 	http.HandleFunc("/eks", getEksHandler)
 	http.HandleFunc("/quotas", getQuotasHandler)
+	http.HandleFunc("/health", getHealthHandler)
 
 	fmt.Println("Server running at http://localhost:8080/api")
 	err := http.ListenAndServe(":8080", nil)
@@ -222,4 +223,14 @@ func getQuotasHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	response := getServiceQuotas()
 	fmt.Fprintln(w, response)
+}
+
+
+func getHealthHandler(w http.ResponseWriter, r *http.Request){
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+    w.WriteHeader(http.StatusOK)
 }
