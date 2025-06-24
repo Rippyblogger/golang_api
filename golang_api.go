@@ -6,6 +6,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
+	"github.com/aws/aws-sdk-go-v2/service/eks"
 	"log"
 	"net/http"
 )
@@ -13,6 +14,7 @@ import (
 func main() {
 	http.HandleFunc("/vpcs", getVpcsHandler)
 	http.HandleFunc("/ec2s", getEc2sHandler)
+	http.HandleFunc("/eks", getEksHandler)
 
 	fmt.Println("Server running at http://localhost:8080/api")
 	err := http.ListenAndServe(":8080", nil)
@@ -114,3 +116,55 @@ func getEc2sHandler(w http.ResponseWriter, r *http.Request) {
 	response := getEc2s()
 	fmt.Fprintln(w, response)
 }
+
+func getEks() []string {
+	// Load AWS SDK config
+	cfg, err := config.LoadDefaultConfig(context.TODO(),
+		config.WithSharedConfigProfile("default"),
+	)
+	if err != nil {
+		log.Fatalf(fmt.Sprintf("failed loading config, %v", err))
+	}
+
+	// Create service client
+	eksClient := eks.NewFromConfig(cfg)
+
+	// Create input variables
+	eksInput := &eks.ListClustersInput{MaxResults: aws.Int32(10)}
+
+	// Call function
+	eksOut, err := eksClient.ListClusters(context.TODO(), eksInput)
+
+	if err != nil {
+		log.Fatalf(fmt.Sprintf("Error: %v", err))
+	}
+
+	eksList := []string{}
+	for _, v := range eksOut.Clusters {
+
+		formattedOutput := fmt.Sprintf(
+			"Clusters: %s\n",
+			v)
+
+		eksList = append(eksList, formattedOutput)
+
+	}
+
+	if len(eksList) == 0 {
+		fmt.Println("There are no EKS clusters in your AWS account")
+		return nil
+
+	} else {
+		return eksList
+	}
+}
+
+func getEksHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	response := getEks()
+	fmt.Fprintln(w, response)
+}
+
