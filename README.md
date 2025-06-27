@@ -71,7 +71,7 @@ The server will start on **http://localhost:8080**
 
 ### Request Quota Increase
 
-- `curl -X POST http://localhost:8080/quota
+- **Example:** `curl -X POST http://localhost:8080/quota
 -H "Content-Type: application/json"
 -d '{
 "serviceCode": "ec2",
