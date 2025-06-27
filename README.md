@@ -29,12 +29,6 @@ A Go-based API server for monitoring AWS resources and service quotas built with
 
 1. **Configure AWS credentials** using one of these methods:
    - AWS CLI: `aws configure`
-   - Environment variables:
-     ```
-     export AWS_ACCESS_KEY_ID=YOUR_ACCESS_KEY
-     export AWS_SECRET_ACCESS_KEY=YOUR_SECRET_KEY
-     export AWS_REGION=SET_REGION
-     ```
    - `~/.aws/credentials` file
 
 2. **Set required permissions** in IAM:
@@ -43,6 +37,14 @@ A Go-based API server for monitoring AWS resources and service quotas built with
    - `servicequotas:ListServiceQuotas`
    - `servicequotas:RequestServiceQuotaIncrease`
 
+3. To run it as a Docker container
+
+- Replace **container_name** and **docker_image** in the below command and run:
+
+         docker run -d --name container_name \
+         --mount type=bind,source=/home/parallels/.aws,target=/root/.aws,readonly \
+         -p 5000:8080 docker_image
+
 ### Running the API Server
 
 1. **Clone the repository**
@@ -50,15 +52,15 @@ git clone **https://github.com/Rippyblogger/Golang-API.git**
 
 2. Navigate to project directory
 
-        `cd Golang-API`
+        cd Golang-API
 
 3. Install dependencies
 
-        `go mod tidy`
+        go mod download
 
 4. Start the API server
 
-        `go run golang_api.go`
+        go run golang_api.go
 
 The server will start on **http://localhost:8080**
 
