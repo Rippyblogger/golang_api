@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -18,6 +19,7 @@ func main() {
 	http.HandleFunc("/eks", getEksHandler)
 	http.HandleFunc("/quotas", getQuotasHandler)
 	http.HandleFunc("/health", getHealthHandler)
+	http.HandleFunc("/quota", quotaIncreaseHandler)
 
 	fmt.Println("Server running at http://localhost:8080/api")
 	err := http.ListenAndServe(":8080", nil)
@@ -140,6 +142,7 @@ func getEks() []string {
 
 	if err != nil {
 		log.Fatalf(fmt.Sprintf("Error: %v", err))
+
 	}
 
 	eksList := []string{}
@@ -184,7 +187,8 @@ func getServiceQuotas() map[string][]string {
 	sqClient := servicequotas.NewFromConfig(cfg)
 
 	// Create input variables=
-	servicesList := []string{"ec2", "vpc", "eks"}
+	// servicesList := []string{"ec2", "vpc", "eks"}
+	servicesList := []string{"vpc"}
 
 	// Call function
 	quotaMap := make(map[string][]string)
@@ -225,12 +229,69 @@ func getQuotasHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, response)
 }
 
-
-func getHealthHandler(w http.ResponseWriter, r *http.Request){
+func getHealthHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
-    w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusOK)
+}
+
+func quotaIncreaseHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	cfg, error := config.LoadDefaultConfig(context.TODO(),
+		config.WithSharedConfigProfile("default"),
+	)
+
+	if error != nil {
+		http.Error(w, "failed loading config", http.StatusInternalServerError)
+	}
+
+	// Create service client
+	quotaIncreaseClient := servicequotas.NewFromConfig(cfg)
+
+	type requestInput struct {
+		DesiredValue float64 `json:"desired_value"`
+		QuotaCode    string  `json:"quota_code"`
+		ServiceCode  string  `json:"service_code"`
+	}
+
+	var input requestInput
+
+	err := json.NewDecoder(r.Body).Decode(&input)
+
+	if err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+
+	if input.DesiredValue == 0 || input.QuotaCode == "" || input.ServiceCode == "" {
+		http.Error(w, "One or more fileds are invalid", http.StatusBadRequest)
+		return
+	}
+
+	// Create input variables
+	quotaInput := &servicequotas.RequestServiceQuotaIncreaseInput{
+		DesiredValue: aws.Float64(input.DesiredValue),
+		QuotaCode:    aws.String(input.QuotaCode),
+		ServiceCode:  aws.String(input.ServiceCode),
+	}
+
+	// Call function
+	response, err := quotaIncreaseClient.RequestServiceQuotaIncrease(context.TODO(), quotaInput)
+
+	if err != nil {
+		http.Error(w, "Failed to request quota increase: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
+
 }
