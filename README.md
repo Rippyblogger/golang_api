@@ -39,10 +39,10 @@ A Go-based API server for monitoring AWS resources and service quotas built with
 
 3. To run it as a Docker container
 
-- Replace **container_name** and **docker_image** in the below command and run:
+- Replace ****username**, **container_name** and **docker_image** in the below command and run:
 
          docker run -d --name container_name \
-         --mount type=bind,source=/home/parallels/.aws,target=/root/.aws,readonly \
+         --mount type=bind,source=/home/username/.aws,target=/root/.aws,readonly \
          -p 5000:8080 docker_image
 
 ### Running the API Server
