@@ -31,7 +31,7 @@ func main() {
 func getVpcs() []string {
 	// Load AWS SDK config
 	cfg, err := config.LoadDefaultConfig(context.TODO(),
-		config.WithSharedConfigProfile("default"),
+		// config.WithSharedConfigProfile("default"),
 	)
 	if err != nil {
 		log.Fatalf(fmt.Sprintf("failed loading config, %v", err))
