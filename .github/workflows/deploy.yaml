@@ -93,12 +93,12 @@ jobs:
       - name: Terraform Init
         run: |
           terraform init -input=false
-          sleep 20s
+          
 
       - name: Terraform Plan
         run: |
-          terraform plan -input=false
           sleep 20s
+          terraform plan -input=false
       - name: Terraform Apply
         run: |
           terraform apply -auto-approve -input=false
