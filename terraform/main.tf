@@ -51,7 +51,7 @@ module "go_api_k8s" {
 
   cluster_name           = data.terraform_remote_state.infra.outputs.cluster_name
   cluster_endpoint       = data.terraform_remote_state.infra.outputs.cluster_endpoint
-  cluster_ca_certificate = data.terraform_remote_state.infra.outputs.cluster_certificate_authority_data
+  cluster_ca_certificate = data.terraform_remote_state.infra.outputs.cluster_ca_certificate
 
   deployment_name      = "go-api-deployment"
   namespace            = "default"
