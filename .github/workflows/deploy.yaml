@@ -16,16 +16,12 @@ permissions:
   contents: read
 
 jobs:
-  checkout:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
   build_and_push:
     runs-on: ubuntu-latest
-    needs: checkout
     steps:
+
+      - name: Checkout code
+        uses: actions/checkout@v4
       - name: Configure AWS Credentials for regional audience
         uses: aws-actions/configure-aws-credentials@v4.1.0
         with:
