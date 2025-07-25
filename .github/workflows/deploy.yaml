@@ -91,10 +91,15 @@ jobs:
           terraform_version: 1.12.0
 
       - name: Terraform Init
-        run: terraform init -input=false
+        run: |
+          terraform init -input=false
+          sleep 10s
 
       - name: Terraform Plan
-        run: terraform plan -input=false
-
+        run: |
+          terraform plan -input=false
+          sleep 10s
       - name: Terraform Apply
-        run: terraform apply -auto-approve -input=false
+        run: |
+          terraform apply -auto-approve -input=false
+          sleep 10s
