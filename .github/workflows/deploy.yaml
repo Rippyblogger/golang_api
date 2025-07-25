@@ -37,7 +37,7 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v2
 
       - name: Set lowercase repository name
-        run: echo "REPOSITORY=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]' | tr '/' '-')" >> $GITHUB_ENV
+        run: echo "REPOSITORY=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
 
       - name: Build, tag, and push docker image to Amazon ECR
         env:
