@@ -93,20 +93,12 @@ jobs:
       - name: Terraform Init
         run: |
           terraform init -input=false
-          sleep 10s
+          sleep 20s
 
       - name: Terraform Plan
         run: |
-          n=0
-          until [ $n -ge 5 ]
-          do
-            terraform plan -input=false && break
-            echo "Terraform plan failed due to lock. Retrying in 10 seconds..."
-            sleep 10
-            n=$((n+1))
-          done
-          sleep 10s
+          terraform plan -input=false
+          sleep 20s
       - name: Terraform Apply
         run: |
           terraform apply -auto-approve -input=false
-          sleep 10s
