@@ -30,8 +30,8 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4.1.0
         with:
           audience: sts.amazonaws.com
-          aws-region: ${{env.AWS_REGION}}
-          role-to-assume: arn:aws:iam::${{secrets.ACCOUNT_ID}}:role/${{env.AWS_ROLE_NAME}}
+          aws-region: ${{vars.AWS_REGION}}
+          role-to-assume: arn:aws:iam::${{secrets.ACCOUNT_ID}}:role/${{vars.AWS_ROLE_NAME}}
 
       - name: Confirm access
         run: aws sts get-caller-identity
@@ -71,8 +71,8 @@ jobs:
       - name: Configure AWS credentials using OIDC
         uses: aws-actions/configure-aws-credentials@v4.1.0
         with:
-          role-to-assume: arn:aws:iam::${{ secrets.ACCOUNT_ID }}:role/${{ env.AWS_ROLE_NAME }}
-          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: arn:aws:iam::${{ secrets.ACCOUNT_ID }}:role/${{ vars.AWS_ROLE_NAME }}
+          aws-region: ${{ vars.AWS_REGION }}
           audience: sts.amazonaws.com
 
       - name: Setup Terraform
