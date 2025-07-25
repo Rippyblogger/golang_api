@@ -46,6 +46,7 @@ jobs:
           IMAGE_TAG: ${{ github.sha }}
         run: |
           echo "REPOSITORY=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]' | tr '/' '-')" >> $GITHUB_ENV
+          echo $REPOSITORY
           
           docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
 
