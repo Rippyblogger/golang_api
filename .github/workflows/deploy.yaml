@@ -11,6 +11,9 @@ on:
       - closed
   workflow_dispatch:
 
+concurrency:
+  group: app-deployment
+  cancel-in-progress: false      
 permissions:
   id-token: write
   contents: read
