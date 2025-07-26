@@ -111,3 +111,43 @@ jobs:
       - name: Terraform Apply
         run: |
           terraform apply -auto-approve -input=false
+
+  terraform_destroy:
+      name: Destroy EKS Infrastructure via Terraform
+      runs-on: ubuntu-latest
+      if: github.event.inputs.action == 'destroy'
+      
+      defaults:
+        run:
+          working-directory: ./terraform
+
+      steps:
+        - name: Checkout code
+          uses: actions/checkout@v4
+
+        - name: Configure AWS credentials using OIDC
+          uses: aws-actions/configure-aws-credentials@v4.1.0
+          with:
+            role-to-assume: arn:aws:iam::${{ secrets.ACCOUNT_ID }}:role/${{ vars.AWS_ROLE_NAME }}
+            aws-region: ${{ vars.AWS_REGION }}
+            audience: sts.amazonaws.com
+
+        - name: Confirm access
+          run: aws sts get-caller-identity
+
+        - name: Setup Terraform
+          uses: hashicorp/setup-terraform@v3
+          with:
+            terraform_version: 1.12.0
+
+        - name: Terraform Init
+          run: |
+            terraform init -input=false
+
+        - name: Terraform Plan Destroy
+          run: |
+            terraform plan -destroy -input=false
+
+        - name: Terraform Destroy
+          run: |
+            terraform destroy -auto-approve -input=false
