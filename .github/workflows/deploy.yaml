@@ -78,7 +78,6 @@ jobs:
     runs-on: ubuntu-latest
     needs: build_and_push
 
-    if: success() && needs.build_and_push.outputs.image_uri != ''
     env:
       TF_VAR_image_name: ${{ needs.build_and_push.outputs.registry }}/${{ needs.build_and_push.outputs.repository }}:${{ needs.build_and_push.outputs.image_tag }}
 
