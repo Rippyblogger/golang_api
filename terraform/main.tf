@@ -1,13 +1,13 @@
 terraform {
   required_version = ">= 1.12.0"
 
-  # backend "s3" {
-  #   bucket       = "s3-state-bucket73579"
-  #   key          = "golang-api/terraform.tfstate"
-  #   region       = "us-east-1"
-  #   encrypt      = true
-  #   # use_lockfile = true
-  # }
+  backend "s3" {
+    bucket       = "s3-state-bucket73579"
+    key          = "golang-api/terraform.tfstate"
+    region       = "us-east-1"
+    encrypt      = true
+    # use_lockfile = true
+  }
 
   required_providers {
     aws = {
