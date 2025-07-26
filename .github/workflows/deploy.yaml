@@ -71,7 +71,7 @@ jobs:
           IMAGE_TAG: ${{ github.sha }}
         run: |
           image_uri="$REGISTRY/$REPOSITORY:$IMAGE_TAG"
-          echo "$image_uri" >> "$GITHUB_OUTPUT"
+          echo "image_uri=$image_uri" >> "$GITHUB_OUTPUT"
           echo "Built image: $image_uri"
 
   terraform_deploy:
