@@ -45,7 +45,6 @@ jobs:
       - name: Set lowercase repository name
         run: echo "REPOSITORY=$(basename '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
 
-
       - name: Build, tag, and push docker image to Amazon ECR
         env:
           REGISTRY: ${{ steps.login-ecr.outputs.registry }}
@@ -64,8 +63,10 @@ jobs:
       
       - name: Set image URI output
         id: set-image-uri
-        run: echo "image_uri=${{ steps.login-ecr.outputs.registry }}/$REPOSITORY:${{ github.sha }}" >> $GITHUB_OUTPUT
-
+        run: |
+          IMAGE_URI="${{ steps.login-ecr.outputs.registry }}/$REPOSITORY:${{ github.sha }}"
+          echo "image_uri=$IMAGE_URI" >> $GITHUB_OUTPUT
+          echo "Built image: $IMAGE_URI"
 
   terraform_deploy:
     name: Deploy to EKS via Terraform
@@ -77,9 +78,24 @@ jobs:
     defaults:
       run:
         working-directory: ./terraform
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Debug environment variables
+        run: |
+          echo "=== DEBUG INFO ==="
+          echo "TF_VAR_image_name: '$TF_VAR_image_name'"
+          echo "Build output image_uri: '${{ needs.build_and_push.outputs.image_uri }}'"
+          echo "Length of TF_VAR_image_name: ${#TF_VAR_image_name}"
+          echo "=================="
+          
+          if [ -z "$TF_VAR_image_name" ]; then
+            echo "ERROR: TF_VAR_image_name is empty!"
+            echo "This will cause Terraform to fail"
+            exit 1
+          fi
 
       - name: Configure AWS credentials using OIDC
         uses: aws-actions/configure-aws-credentials@v4.1.0
@@ -92,15 +108,12 @@ jobs:
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.12.0
-
       - name: Terraform Init
         run: |
           terraform init -input=false
-          
 
       - name: Terraform Plan
         run: |
-          export TF_LOF=debug
           sleep 20s
           terraform plan -input=false
       - name: Terraform Apply

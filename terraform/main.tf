@@ -1,13 +1,13 @@
 terraform {
   required_version = ">= 1.12.0"
 
-  backend "s3" {
-    bucket       = "s3-state-bucket73579"
-    key          = "golang-api/terraform.tfstate"
-    region       = "us-east-1"
-    encrypt      = true
-    # use_lockfile = true
-  }
+  # backend "s3" {
+  #   bucket       = "s3-state-bucket73579"
+  #   key          = "golang-api/terraform.tfstate"
+  #   region       = "us-east-1"
+  #   encrypt      = true
+  #   # use_lockfile = true
+  # }
 
   required_providers {
     aws = {
@@ -20,8 +20,6 @@ terraform {
     }
   }
 }
-
-
 
 provider "aws" {
   region = "us-east-1"
@@ -54,7 +52,6 @@ module "go_api_k8s" {
   cluster_name           = data.terraform_remote_state.infra.outputs.cluster_name
   cluster_endpoint       = data.terraform_remote_state.infra.outputs.cluster_endpoint
   cluster_ca_certificate = data.terraform_remote_state.infra.outputs.cluster_ca_certificate
-
   deployment_name      = "go-api-deployment"
   namespace            = "default"
   env                  = "production"
@@ -62,7 +59,6 @@ module "go_api_k8s" {
   app_name             = "go-api"
   image_name           = var.image_name
   service_account_name = "my-go-api-irsa-sa"
-
   oidc_arn          = data.terraform_remote_state.infra.outputs.oidc_provider_arn
   oidc_provider_url = data.terraform_remote_state.infra.outputs.oidc_provider_url
 }
