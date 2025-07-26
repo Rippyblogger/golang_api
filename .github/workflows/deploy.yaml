@@ -70,9 +70,9 @@ jobs:
           REPOSITORY: ${{ env.REPOSITORY }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          IMAGE_URI="$REGISTRY/$REPOSITORY:$IMAGE_TAG"
-          echo "image_uri=$IMAGE_URI" >> $GITHUB_OUTPUT
-          echo "Built image: $IMAGE_URI"
+          image_uri="$REGISTRY/$REPOSITORY:$IMAGE_TAG"
+          echo "$image_uri" >> "$GITHUB_OUTPUT"
+          echo "Built image: $image_uri"
 
   terraform_deploy:
     name: Deploy to EKS via Terraform
