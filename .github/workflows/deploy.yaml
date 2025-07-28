@@ -25,6 +25,7 @@ jobs:
       registry: ${{ steps.login-ecr.outputs.registry }}
       repository: ${{ steps.set-repository.outputs.repository }}
       image_tag: ${{ github.sha }}
+      full_image_uri: ${{ steps.set-image-uri.outputs.full_image_uri }}
 
     steps:
       - name: Checkout code
@@ -71,7 +72,9 @@ jobs:
           REPOSITORY: ${{ env.REPOSITORY }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          echo "Built image: $REGISTRY/$REPOSITORY:$IMAGE_TAG"
+          FULL_IMAGE_URI="$REGISTRY/$REPOSITORY:$IMAGE_TAG"
+          echo "full_image_uri=$FULL_IMAGE_URI" >> "$GITHUB_OUTPUT"
+          echo "Built image with full URI: $FULL_IMAGE_URI"
 
   terraform_deploy:
     name: Deploy to EKS via Terraform
@@ -79,7 +82,7 @@ jobs:
     needs: build_and_push
 
     env:
-      TF_VAR_image_name: ${{ needs.build_and_push.outputs.registry }}/${{ needs.build_and_push.outputs.repository }}:${{ needs.build_and_push.outputs.image_tag }}
+      TF_VAR_image_name: ${{ needs.build_and_push.outputs.full_image_uri }}
 
     defaults:
       run:
