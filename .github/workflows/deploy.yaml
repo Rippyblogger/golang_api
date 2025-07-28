@@ -110,6 +110,7 @@ jobs:
           terraform plan -input=false
       - name: Terraform Apply
         run: |
+          echo "$TF_VAR_image_name"
           terraform apply -auto-approve -input=false
 
   terraform_destroy:
