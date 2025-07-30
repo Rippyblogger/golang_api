@@ -43,6 +43,10 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
+      - name: Mask sensitive values
+        run: |
+          echo "::add-mask::${{ secrets.ACCOUNT_ID }}"
+
       - name: Set lowercase repository name
         id: set-repository
         run: |
@@ -56,7 +60,6 @@ jobs:
           REPOSITORY: ${{ env.REPOSITORY }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
-
           docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
 
           docker tag $REGISTRY/$REPOSITORY:$IMAGE_TAG $REGISTRY/$REPOSITORY:latest
@@ -96,6 +99,10 @@ jobs:
           aws-region: ${{ vars.AWS_REGION }}
           audience: sts.amazonaws.com
 
+      - name: Mask sensitive values
+        run: |
+          echo "::add-mask::${{ secrets.ACCOUNT_ID }}"
+
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
@@ -132,6 +139,10 @@ jobs:
             role-to-assume: arn:aws:iam::${{ secrets.ACCOUNT_ID }}:role/${{ vars.AWS_ROLE_NAME }}
             aws-region: ${{ vars.AWS_REGION }}
             audience: sts.amazonaws.com
+
+        - name: Mask sensitive values
+          run: |
+            echo "::add-mask::${{ secrets.ACCOUNT_ID }}"
 
         - name: Confirm access
           run: aws sts get-caller-identity
