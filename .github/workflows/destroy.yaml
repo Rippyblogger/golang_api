@@ -12,6 +12,9 @@ jobs:
   terraform_destroy:
       name: Destroy EKS Infrastructure via Terraform
       runs-on: ubuntu-latest
+
+      env:
+        TF_VAR_image_name: "placeholder"
       
       defaults:
         run:
