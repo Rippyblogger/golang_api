@@ -31,52 +31,195 @@ A Go-based API server for monitoring AWS resources and service quotas built with
    - AWS CLI: `aws configure`
    - `~/.aws/credentials` file
 
-2. **Set required permissions** in IAM:
+2. **Ensure you have the required permissions** in IAM (Already set in [Base-AWS-Infrastructure](https://github.com/Rippyblogger/Base-AWS-Infrastructure) ):
    - `ec2:Describe*`
    - `eks:ListClusters`
+   - `eks:DescribeCluster`,
    - `servicequotas:ListServiceQuotas`
+   - `servicequotas:RequestServiceQuotaIncrease`,
+   - `servicequotas:GetServiceQuota`,
    - `servicequotas:RequestServiceQuotaIncrease`
 
-3. To run it as a Docker container
+## Running the API Server on EKS
 
-- Replace ****username**, **container_name** and **docker_image** in the below command and run:
+- AWS Account with appropriate permissions
+- AWS CLI configured (for local development)
+- AWS IAM role configured with the following permissions:
+  ```json
+  {
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        "Effect": "Allow",
+        "Action": [
+          "ec2:Describe*",
+          "eks:ListClusters",
+          "eks:DescribeCluster",
+          "vpc:Describe*",
+          "servicequotas:ListServiceQuotas",
+          "servicequotas:GetServiceQuota",
+          "servicequotas:RequestServiceQuotaIncrease"
+        ],
+        "Resource": "*"
+      }
+    ]
+  }
+  ```
 
-         docker run -d --name container_name \
-         --mount type=bind,source=/home/username/.aws,target=/root/.aws,readonly \
-         -p 5000:8080 docker_image
+### Infrastructure Requirements
+- EKS Cluster (deployed using the [Base-AWS-Infrastructure](https://github.com/Rippyblogger/Base-AWS-Infrastructure))
 
-### Running the API Server
+## 🚀 Deployment Options
 
-1. **Clone the repository**
-git clone **https://github.com/Rippyblogger/Golang-API.git**
+### Option 1: Automated Deployment (Recommended)
 
-2. Navigate to project directory
+This repository uses GitHub Actions for automated deployment. The deployment happens automatically when:
 
-        cd Golang-API
+1. **On Push to Main**: Triggers build, test, and deployment
+2. **On Pull Request Merge**: Deploys merged changes
+3. **Manual Trigger**: To trigger the deployment manually
 
-3. Install dependencies
+#### Setup for Automated Deployment:
 
-        go mod download
+1. **Fork this repository** to your GitHub account
 
-4. Start the API server
+2. **Set up GitHub Repository Variables** in your repository settings:
+   ```
+   ACCOUNT_ID: Your AWS Account ID
+   AWS_REGION: Your preferred AWS region (e.g., us-west-2)
+   AWS_ROLE_NAME: Name of your OIDC-enabled IAM role (e.g., oidc_role)
+   ```
 
-        go run golang_api.go
+3. **Ensure Infrastructure is Deployed**: Make sure you have deployed the base infrastructure using the [Base-AWS-Infrastructure](https://github.com/Rippyblogger/Base-AWS-Infrastructure) repository first.
 
-The server will start on **http://localhost:8080**
+4. **Push to Main Branch**: Any push to the main branch will trigger the deployment pipeline.
 
+### Option 2: Manual Local Development
 
-## Usage Examples
+For local development and testing:
 
-### Retrieve VPC Information
-- curl http://localhost:8080/vpcs
+```bash
+# Clone the repository
+git clone https://github.com/Rippyblogger/golang_api.git
+cd golang_api
 
+# Install dependencies
+go mod download
+
+# Set up AWS credentials (choose one method)
+# Method 1: AWS CLI
+aws configure
+
+# Method 2: Environment variables
+export AWS_ACCESS_KEY_ID=your_access_key
+export AWS_SECRET_ACCESS_KEY=your_secret_key
+export AWS_REGION=us-west-2
+
+# Run the application
+go run main.go
+```
+
+The server will start on `http://localhost:8080`
+
+### Option 3: Docker Deployment
+
+```bash
+# Build the Docker image
+docker build -t golangapi .
+
+# Run with AWS credentials mounted (Linux/Mac)
+docker run -d \
+  --name golang-api \
+  --mount type=bind,source=$HOME/.aws,target=/root/.aws,readonly \
+  -p 5000:8080 \
+  golangapi
+
+# Run with environment variables
+docker run -d \
+  --name golang-api \
+  -e AWS_ACCESS_KEY_ID=your_access_key \
+  -e AWS_SECRET_ACCESS_KEY=your_secret_key \
+  -e AWS_REGION=us-west-2 \
+  -p 5000:8080 \
+  golangapi
+
+```
+
+## 🔧 Usage Examples
+
+### Get VPC Information
+```bash
+curl -X GET http://localhost:8080/vpcs
+```
+
+### Get EC2 Instances
+```bash
+curl -X GET http://localhost:8080/ec2s
+```
+
+### Get EKS Clusters
+```bash
+curl -X GET http://localhost:8080/eks
+```
+
+### Check Service Quotas
+```bash
+curl -X GET http://localhost:8080/quotas
+```
 
 ### Request Quota Increase
+```bash
+curl -X POST http://localhost:8080/quota \
+  -H "Content-Type: application/json" \
+  -d '{
+    "serviceCode": "ec2",
+    "quotaCode": "L-1216C47A",
+    "desiredValue": 50
+  }'
+```
 
-- **Example:** `curl -X POST http://localhost:8080/quota
--H "Content-Type: application/json"
--d '{
-"serviceCode": "ec2",
-"quotaCode": "L-1216C47A",
-"desiredValue": 50
-}'`
+### Health Check
+```bash
+curl -X GET http://localhost:8080/health
+```
+
+## 🔄 CI/CD Pipeline
+
+**Note**: This API is part of a larger infrastructure setup. Make sure to deploy the [Base-AWS-Infrastructure](https://github.com/Rippyblogger/Base-AWS-Infrastructure) first before deploying this application.
+
+This repository implements a **GitOps deployment strategy** with the following workflows:
+
+### Deploy to Production Workflow
+- **Triggers**: Push to main, PR merge to main, manual dispatch
+- **Process**:
+  1. Builds and pushes Docker image to ECR
+  2. Deploys to EKS using Terraform
+  3. Updates Kubernetes deployment with new image
+- **Security**: Uses OIDC authentication (no static credentials)
+
+### Destroy Infrastructure Workflow
+- **Trigger**: Manual dispatch only
+- **Process**: Safely destroys all Terraform-managed resources
+
+### Workflow Files
+- `.github/workflows/deploy.yml` - Main deployment pipeline
+- `.github/workflows/destroy.yml` - Container infrastructure destruction
+
+## 🏗️ Project Structure
+
+```
+.
+├── main.go                    # Main application file
+├── Dockerfile                 # Container build instructions
+├── go.mod                     # Go module dependencies
+├── go.sum                     # Dependency checksums
+├── terraform/                 # Kubernetes deployment configuration
+│   ├── main.tf               # Terraform configuration
+│   ├── variables.tf          # Input variables
+│   └── outputs.tf            # Output values
+├── .github/
+│   └── workflows/
+│       ├── deploy.yml        # Deployment workflow
+│       └── destroy.yml       # Destruction workflow
+└── README.md                 # This file
+```
