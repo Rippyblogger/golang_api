@@ -115,3 +115,70 @@ jobs:
         run: |
           echo "$TF_VAR_image_name"
           terraform apply -auto-approve -input=false
+
+      - name: Get Load Balancer URL
+        id: get-lb-url
+        run: |
+          # Wait for load balancer to be ready
+          echo "⏳ Waiting for load balancer to be provisioned..."
+          sleep 60s
+
+          # Get cluster name from terraform output
+          CLUSTER_NAME=$(terraform output -raw cluster_name 2>/dev/null || echo "")
+
+          # If terraform output doesn't work, try to get it from the state
+          if [ -z "$CLUSTER_NAME" ]; then
+            CLUSTER_NAME=$(aws eks list-clusters --query 'clusters[0]' --output text)
+          fi
+
+          # Update kubeconfig
+          aws eks update-kubeconfig --region ${{ vars.AWS_REGION }} --name $CLUSTER_NAME
+
+          # Get load balancer URL with retries
+          MAX_ATTEMPTS=10
+          ATTEMPT=1
+
+          while [ $ATTEMPT -le $MAX_ATTEMPTS ]; do
+            echo "🔍 Attempt $ATTEMPT: Getting load balancer URL..."
+            
+            LB_URL=$(kubectl get service go-api-deployment-svc -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || echo "")
+            
+            if [ -n "$LB_URL" ] && [ "$LB_URL" != "" ]; then
+              echo "Load balancer URL found: http://$LB_URL"
+              echo "lb_url=http://$LB_URL" >> $GITHUB_OUTPUT
+              break
+            else
+              echo "Load balancer not ready yet, waiting 30 seconds..."
+              sleep 30
+              ATTEMPT=$((ATTEMPT + 1))
+            fi
+          done
+
+          if [ $ATTEMPT -gt $MAX_ATTEMPTS ]; then
+            echo "❌ Failed to get load balancer URL after $MAX_ATTEMPTS attempts"
+            echo "🔍 Service status:"
+            kubectl describe service go-api-deployment-svc
+            echo "lb_url=Load balancer URL not available yet - check AWS console" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Display Deployment Information
+        run: |
+          echo "🚀 Deployment completed successfully!"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "SUMMARY"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "🐳 Docker Image: ${{ env.TF_VAR_image_name }}"
+          echo "🌐 Load Balancer URL: ${{ steps.get-lb-url.outputs.lb_url }}"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo ""
+          echo "🔗 You can access the Golang API at:"
+          echo "   ${{ steps.get-lb-url.outputs.lb_url }}"
+          echo ""
+          echo "Available endpoints:"
+          echo "   • GET  ${{ steps.get-lb-url.outputs.lb_url }}/health"
+          echo "   • GET  ${{ steps.get-lb-url.outputs.lb_url }}/vpcs"
+          echo "   • GET  ${{ steps.get-lb-url.outputs.lb_url }}/ec2s"
+          echo "   • GET  ${{ steps.get-lb-url.outputs.lb_url }}/eks"
+          echo "   • GET  ${{ steps.get-lb-url.outputs.lb_url }}/quotas"
+          echo "   • POST ${{ steps.get-lb-url.outputs.lb_url }}/quota"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
