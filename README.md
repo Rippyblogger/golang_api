@@ -90,9 +90,75 @@ This repository uses GitHub Actions for automated deployment. The deployment hap
    AWS_ROLE_NAME: Name of your OIDC-enabled IAM role (e.g., oidc_role)
    ```
 
-3. **Ensure Infrastructure is Deployed**: Make sure you have deployed the base infrastructure using the [Base-AWS-Infrastructure](https://github.com/Rippyblogger/Base-AWS-Infrastructure) repository first.
+3. **Ensure Base Infrastructure is Deployed**: Make sure you have deployed the base infrastructure using the [Base-AWS-Infrastructure](https://github.com/Rippyblogger/Base-AWS-Infrastructure) repository first.
 
-4. **Push to Main Branch**: Any push to the main branch will trigger the deployment pipeline.
+4. **Configure Terraform Backend**: Update the S3 backend configurations in `terraform/main.tf` to use the same S3 bucket created in Step 1 of the base infrastructure deployment:
+
+   ```hcl
+   terraform {
+     backend "s3" {
+       bucket  = "-terraform-state"  # Same bucket from base infrastructure
+       key     = "applications/golang-api/terraform.tfstate"
+       region  = "us-east-1"                          # Match your bucket region
+       encrypt = true
+     }
+   }
+ 
+    data "terraform_remote_state" "infra" {
+      backend = "s3"
+      config = {
+        bucket = "s3-state-bucket73579"
+        key    = "infrastructure/terraform.tfstate"
+        region = "us-east-1" # Match your bucket region
+      }
+    }
+    ```
+
+   **⚠️ Important**: Replace `your-terraform-state-bucket-12345` with the actual S3 bucket name you created for the base infrastructure.
+
+5. **Configure Kubernetes Deployment Parameters**
+
+   The deployment uses a modular Terraform architecture that references the [Base-AWS-Infrastructure](https://github.com/Rippyblogger/Base-AWS-Infrastructure) . You can customize the deployment by modifying the existing sample module parameters in `terraform/main.tf`:
+
+   ```hcl
+   module "go_api_k8s" {
+     source = "git::https://github.com/Rippyblogger/Base-AWS-Infrastructure.git//modules/kubernetes?ref=main"
+
+     # Cluster connection (pulled from base infrastructure state)
+     cluster_name           = data.terraform_remote_state.infra.outputs.cluster_name
+     cluster_endpoint       = data.terraform_remote_state.infra.outputs.cluster_endpoint
+     cluster_ca_certificate = data.terraform_remote_state.infra.outputs.cluster_ca_certificate
+     
+     # Application deployment settings
+     deployment_name        = "go-api-deployment"        # Name of the Kubernetes deployment
+     env                   = "production"                # Environment label
+     replicas_count        = 1                          # Number of pod replicas
+     app_name              = "go-api"                   # Application name/label
+     image_name            = var.image_name             # ECR image URL (set by CI/CD)
+     
+     # IRSA (IAM Roles for Service Accounts) configuration
+     service_account_name  = "my-go-api-irsa-sa"       # Kubernetes service account name
+     oidc_arn             = data.terraform_remote_state.infra.outputs.oidc_provider_arn
+     oidc_provider_url    = data.terraform_remote_state.infra.outputs.oidc_provider_url
+   }
+   ```
+
+   **Key Parameters You Can Customize:**
+
+   | Parameter | Description | Sample Value | Notes |
+   |-----------|-------------|---------------|--------|
+   | `deployment_name` | Name of the Kubernetes deployment | `go-api-deployment` | Must be unique within namespace |
+   | `env` | Environment label (dev/staging/production) | `production` | Used for resource tagging |
+   | `replicas_count` | Number of pod replicas | `1` | Increase for high availability |
+   | `app_name` | Application name used in labels | `go-api` | Keep consistent across resources |
+   | `service_account_name` | IRSA service account name | `my-go-api-irsa-sa` | |
+
+   **Important Notes:**
+   - The `image_name` variable is automatically set by the CI/CD pipeline with the ECR image URI
+   - OIDC configuration enables the pods to assume AWS IAM roles without storing credentials
+   - Cluster connection parameters are automatically retrieved from the base infrastructure Terraform state
+
+6. **Push to Main Branch**: Any push to the main branch will trigger the deployment pipeline.
 
 ### Option 2: Manual Local Development
 

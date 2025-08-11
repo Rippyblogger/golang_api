@@ -4,9 +4,8 @@ terraform {
   backend "s3" {
     bucket       = "s3-state-bucket73579"
     key          = "golang-api/terraform.tfstate"
-    region       = "us-east-1"
+    region       = "us-east-1" # Match your bucket region
     encrypt      = true
-    # use_lockfile = true
   }
 
   required_providers {
@@ -31,7 +30,7 @@ data "terraform_remote_state" "infra" {
   config = {
     bucket = "s3-state-bucket73579"
     key    = "infrastructure/terraform.tfstate"
-    region = "us-east-1"
+    region = "us-east-1" # Match your bucket region
   }
 }
 
@@ -53,7 +52,6 @@ module "go_api_k8s" {
   cluster_endpoint       = data.terraform_remote_state.infra.outputs.cluster_endpoint
   cluster_ca_certificate = data.terraform_remote_state.infra.outputs.cluster_ca_certificate
   deployment_name      = "go-api-deployment"
-  namespace            = "default"
   env                  = "production"
   replicas_count       = 1
   app_name             = "go-api"
