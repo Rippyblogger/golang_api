@@ -31,7 +31,6 @@ func main() {
 func getVpcs() []string {
 	// Load AWS SDK config
 	cfg, err := config.LoadDefaultConfig(context.TODO(),
-		// config.WithSharedConfigProfile("default"),
 	)
 	if err != nil {
 		log.Fatalf(fmt.Sprintf("failed loading config, %v", err))
@@ -75,7 +74,6 @@ func getVpcsHandler(w http.ResponseWriter, r *http.Request) {
 func getEc2s() []string {
 	// Load AWS SDK config
 	cfg, err := config.LoadDefaultConfig(context.TODO(),
-		config.WithSharedConfigProfile("default"),
 	)
 	if err != nil {
 		log.Fatalf(fmt.Sprintf("failed loading config, %v", err))
@@ -125,7 +123,6 @@ func getEc2sHandler(w http.ResponseWriter, r *http.Request) {
 func getEks() []string {
 	// Load AWS SDK config
 	cfg, err := config.LoadDefaultConfig(context.TODO(),
-		config.WithSharedConfigProfile("default"),
 	)
 	if err != nil {
 		log.Fatalf(fmt.Sprintf("failed loading config, %v", err))
@@ -177,7 +174,6 @@ func getEksHandler(w http.ResponseWriter, r *http.Request) {
 func getServiceQuotas() map[string][]string {
 	// Load AWS SDK config
 	cfg, err := config.LoadDefaultConfig(context.TODO(),
-		config.WithSharedConfigProfile("default"),
 	)
 	if err != nil {
 		log.Fatalf(fmt.Sprintf("failed loading config, %v", err))
@@ -245,20 +241,20 @@ func quotaIncreaseHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	cfg, error := config.LoadDefaultConfig(context.TODO(),
-		config.WithSharedConfigProfile("default"),
 	)
 
 	if error != nil {
 		http.Error(w, "failed loading config", http.StatusInternalServerError)
+		return
 	}
 
 	// Create service client
 	quotaIncreaseClient := servicequotas.NewFromConfig(cfg)
 
 	type requestInput struct {
-		DesiredValue float64 `json:"desired_value"`
-		QuotaCode    string  `json:"quota_code"`
-		ServiceCode  string  `json:"service_code"`
+		DesiredValue float64 `json:"desiredValue"`
+		QuotaCode    string  `json:"quotaCode"` 
+		ServiceCode  string  `json:"serviceCode"`
 	}
 
 	var input requestInput
