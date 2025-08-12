@@ -182,7 +182,7 @@ export AWS_SECRET_ACCESS_KEY=your_secret_key
 export AWS_REGION=us-west-2
 
 # Run the application
-go run main.go
+go run golang_api.go
 ```
 
 The server will start on `http://localhost:8080`
@@ -275,7 +275,7 @@ This repository implements a **GitOps deployment strategy** with the following w
 
 ```
 .
-├── main.go                    # Main application file
+├── golang_api.go                    # Main application file
 ├── Dockerfile                 # Container build instructions
 ├── go.mod                     # Go module dependencies
 ├── go.sum                     # Dependency checksums
